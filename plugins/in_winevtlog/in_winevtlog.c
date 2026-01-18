@@ -30,7 +30,7 @@
 #define DEFAULT_THRESHOLD_SIZE 0x7ffff /* Default reading buffer size */
                                        /* (512kib = 524287bytes) */
 #define MINIMUM_THRESHOLD_SIZE 0x0400   /* 1024 bytes */
-#define MAXIMUM_THRESHOLD_SIZE (FLB_INPUT_CHUNK_FS_MAX_SIZE - (1024 * 200))
+#define MAXIMUM_THRESHOLD_PERCENT 90
 
 static int in_winevtlog_collect(struct flb_input_instance *ins,
                                 struct flb_config *config, void *in_context);
@@ -255,32 +255,33 @@ static int in_winevtlog_init(struct flb_input_instance *in,
     ctx->session = session;
 
     /* Set up total reading size threshold */
+    size_t maximum_threshold_size = flb_input_chunk_get_max_size(config) / 100 * MAXIMUM_THRESHOLD_PERCENT;
     if (ctx->total_size_threshold >= MINIMUM_THRESHOLD_SIZE &&
-        ctx->total_size_threshold <= MAXIMUM_THRESHOLD_SIZE) {
-        flb_utils_bytes_to_human_readable_size((size_t) ctx->total_size_threshold,
+        ctx->total_size_threshold <= maximum_threshold_size) {
+        flb_utils_bytes_to_human_readable_size(ctx->total_size_threshold,
                                                human_readable_size,
                                                sizeof(human_readable_size) - 1);
         flb_plg_debug(ctx->ins,
                       "read limit per cycle is set up as %s",
                       human_readable_size);
     }
-    else if (ctx->total_size_threshold > MAXIMUM_THRESHOLD_SIZE) {
-        flb_utils_bytes_to_human_readable_size((size_t) MAXIMUM_THRESHOLD_SIZE,
+    else if (ctx->total_size_threshold > maximum_threshold_size) {
+        flb_utils_bytes_to_human_readable_size(maximum_threshold_size,
                                                human_readable_size,
                                                sizeof(human_readable_size) - 1);
         flb_plg_warn(ctx->ins,
                      "read limit per cycle cannot exceed %s. Set up to %s",
                      human_readable_size, human_readable_size);
-        ctx->total_size_threshold = (unsigned int) MAXIMUM_THRESHOLD_SIZE;
+        ctx->total_size_threshold = maximum_threshold_size;
     }
     else if (ctx->total_size_threshold < MINIMUM_THRESHOLD_SIZE){
-        flb_utils_bytes_to_human_readable_size((size_t) MINIMUM_THRESHOLD_SIZE,
+        flb_utils_bytes_to_human_readable_size(MINIMUM_THRESHOLD_SIZE,
                                                human_readable_size,
                                                sizeof(human_readable_size) - 1);
         flb_plg_warn(ctx->ins,
                      "read limit per cycle cannot under 1KiB. Set up to %s",
                      human_readable_size);
-        ctx->total_size_threshold = (unsigned int) MINIMUM_THRESHOLD_SIZE;
+        ctx->total_size_threshold = MINIMUM_THRESHOLD_SIZE;
     }
 
     /* Open channels */
