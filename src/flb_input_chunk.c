@@ -2347,6 +2347,14 @@ static struct flb_input_chunk *input_chunk_get(struct flb_input_instance *in,
     return ic;
 }
 
+static inline size_t flb_input_chunk_get_max_size(struct flb_input_instance *i)
+{
+    if (i->max_chunk_size > 0) {
+        return i->max_chunk_size;
+    }
+    return FLB_INPUT_CHUNK_FS_MAX_SIZE;
+}
+
 static inline int flb_input_chunk_is_mem_overlimit(struct flb_input_instance *i)
 {
     if (i->mem_buf_limit <= 0) {
@@ -2828,8 +2836,8 @@ static int input_chunk_append_raw(struct flb_input_instance *in,
         real_diff = 0;
     }
 
-    /* Lock buffers where size > 2MB */
-    if (content_size > FLB_INPUT_CHUNK_FS_MAX_SIZE) {
+    /* Lock buffers where size > max_chunk_size */
+    if (content_size > flb_input_chunk_get_max_size(in)) {
         cio_chunk_lock(ic->chunk);
     }
 
@@ -2896,9 +2904,12 @@ static int input_chunk_append_raw(struct flb_input_instance *in,
             content_size = cio_chunk_get_content_size(ic->chunk);
 
             /* Do we have less than 1% available ? */
-            min = (FLB_INPUT_CHUNK_FS_MAX_SIZE * 0.01);
-            if (FLB_INPUT_CHUNK_FS_MAX_SIZE - content_size < min) {
-                cio_chunk_down(ic->chunk);
+            {
+                size_t max_size = flb_input_chunk_get_max_size(in);
+                min = (max_size * 0.01);
+                if (max_size - content_size < min) {
+                    cio_chunk_down(ic->chunk);
+                }
             }
         }
     }

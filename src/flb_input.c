@@ -124,6 +124,12 @@ struct flb_config_map input_global_properties[] = {
         "Enable pausing on an input when they reach their chunks limit"
     },
     {
+        FLB_CONFIG_MAP_SIZE, "storage.max_chunk_size", "0",
+        0, FLB_TRUE, offsetof(struct flb_input_instance, max_chunk_size),
+        "Set the maximum size for a chunk in the filesystem buffer. If not set, "
+        "defaults to 32MB. The value is in bytes."
+    },
+    {
         FLB_CONFIG_MAP_BOOL, "threaded", "false",
         0, FLB_FALSE, 0,
         "Enable threading on an input"
@@ -435,6 +441,7 @@ struct flb_input_instance *flb_input_new(struct flb_config *config,
 
         instance->mem_buf_status = FLB_INPUT_RUNNING;
         instance->mem_buf_limit = 0;
+        instance->max_chunk_size = 0;  /* 0 means use default FLB_INPUT_CHUNK_FS_MAX_SIZE */
         instance->mem_chunks_size = 0;
         instance->storage_buf_status = FLB_INPUT_RUNNING;
         mk_list_add(&instance->_head, &config->inputs);
@@ -723,6 +730,14 @@ int flb_input_set_property(struct flb_input_instance *ins,
         }
         flb_sds_destroy(tmp);
 
+    }
+    else if (prop_key_check("storage.max_chunk_size", k, len) == 0 && tmp) {
+        limit = flb_utils_size_to_bytes(tmp);
+        flb_sds_destroy(tmp);
+        if (limit == -1) {
+            return -1;
+        }
+        ins->max_chunk_size = (size_t) limit;
     }
     else if (prop_key_check("threaded", k, len) == 0 && tmp) {
         enabled = flb_utils_bool(tmp);

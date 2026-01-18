@@ -311,6 +311,13 @@ struct flb_input_instance {
     size_t mem_buf_limit;
 
     /*
+     * Maximum chunk size: optional limit set by configuration for the maximum
+     * size of a chunk in the filesystem buffer. If not set, defaults to
+     * FLB_INPUT_CHUNK_FS_MAX_SIZE (32MB).
+     */
+    size_t max_chunk_size;
+
+    /*
      * Define the buffer status:
      *
      * - FLB_INPUT_RUNNING -> can append more data
