@@ -42,6 +42,8 @@ struct cio_chunk;
  */
 #define FLB_INPUT_CHUNK_FS_MAX_SIZE   2048000  /* 2MB */
 
+size_t flb_input_chunk_get_max_size(struct flb_config *config);
+
 /* Number of bytes reserved for Metadata Header on Chunks */
 #define FLB_INPUT_CHUNK_META_HEADER   4
 
