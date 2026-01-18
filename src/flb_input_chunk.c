@@ -3295,17 +3295,18 @@ void flb_input_chunk_update_output_instances(struct flb_input_chunk *ic,
 size_t flb_input_chunk_get_max_size(struct flb_config *config) {
     int64_t config_input_chunk_max_size;
 
-    if (config && config->storage_max_chunk_size) {
+    if (config != NULL) {
         config_input_chunk_max_size = flb_utils_size_to_bytes(config->storage_max_chunk_size);
         if (config_input_chunk_max_size > 0) {
-            /* If configuration parsed successfully and value is not 0 */
-            flb_debug("[input chunk] using maximum chunk value: %ld", config_input_chunk_max_size);
+            flb_debug("[input chunk] using maximum chunk size: %ld", config_input_chunk_max_size);
 
             return (size_t) config_input_chunk_max_size;
+        } else if (config_input_chunk_max_size == 0) {
+            flb_debug("[input chunk] maximum chunk size was not set, using the default value: %i", FLB_INPUT_CHUNK_FS_MAX_SIZE);
+        } else {
+            flb_debug("[input chunk] could not parse maximum chunk size, using the default value: %i", FLB_INPUT_CHUNK_FS_MAX_SIZE);
         }
     }
 
-    /* If configuration value was not parsed or value is 0. */
-    flb_warn("[input chunk] could not parse max_chunk_size, using the default value: %i", FLB_INPUT_CHUNK_FS_MAX_SIZE);
     return FLB_INPUT_CHUNK_FS_MAX_SIZE;
  }
